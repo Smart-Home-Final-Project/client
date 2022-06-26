@@ -51,21 +51,22 @@ export default function SignIn() {
                 });
         }
         else {
+            localStorage.setItem("token",res.token)
             swal({
-                text: `ברוך שובך ${res.userName}`,
+                text: `ברוך שובך ${res?.user?.userName}`,
                 icon: 'success',
 
             });
-            await dispatch(setUser(res))
-            let plc = await fetchPlc(res);
+            await dispatch(setUser(res?.user))
+            let plc = await fetchPlc(res?.user);
             if (plc[0]) {
                 await dispatch(setPlc(plc[0]));
                 let channels = await fetchChannels(plc[0]);
                 await dispatch(setChannels(channels))
             }
-            let groups = await fetchGroups(res)
+            let groups = await fetchGroups(res?.user)
             await dispatch(setGroups(groups))
-            let alerts = await fetchActionAlert(res)
+            let alerts = await fetchActionAlert(res?.user)
             await dispatch(setActioAlerts(alerts))
             navigate("/")
         }

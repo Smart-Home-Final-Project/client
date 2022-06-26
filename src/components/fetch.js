@@ -15,9 +15,12 @@ export const fetchActionAlert = async (user) => {
 
 export const fetchPlc = async (user) => {
     let plc;
+    let headers = new Headers();
+    headers.append("authorization",`Bearer ${localStorage.getItem("token")}`)
     var requestOptions = {
         method: 'GET',
-        redirect: 'follow'
+        redirect: 'follow',
+        headers
     };
 
     await fetch(`http://localhost:4500/plc/user/${user._id}`, requestOptions)
