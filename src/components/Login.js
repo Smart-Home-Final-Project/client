@@ -15,10 +15,29 @@ import swal from 'sweetalert';
 
 const theme = createTheme();
 
+export const useLogin=()=>{
+    let dispatch = useDispatch();
+    const login = async(res)=>{
+    localStorage.setItem("token",res.token)
+    await dispatch(setUser(res?.user))
+    let plc = await fetchPlc(res?.user);
+    if (plc[0]) {
+        await dispatch(setPlc(plc[0]));
+        let channels = await fetchChannels(plc[0]);
+        await dispatch(setChannels(channels))
+    }
+    let groups = await fetchGroups(res?.user)
+    await dispatch(setGroups(groups))
+    let alerts = await fetchActionAlert(res?.user)
+    await dispatch(setActioAlerts(alerts))
+}
+    return [login]
+}
+
 export default function SignIn() {
 
     const navigate = useNavigate();
-    let dispatch = useDispatch();
+    const [login] = useLogin();
 
     const handleSubmit = async event => {
         event.preventDefault();
@@ -51,23 +70,7 @@ export default function SignIn() {
                 });
         }
         else {
-            localStorage.setItem("token",res.token)
-            swal({
-                text: `ברוך שובך ${res?.user?.userName}`,
-                icon: 'success',
-
-            });
-            await dispatch(setUser(res?.user))
-            let plc = await fetchPlc(res?.user);
-            if (plc[0]) {
-                await dispatch(setPlc(plc[0]));
-                let channels = await fetchChannels(plc[0]);
-                await dispatch(setChannels(channels))
-            }
-            let groups = await fetchGroups(res?.user)
-            await dispatch(setGroups(groups))
-            let alerts = await fetchActionAlert(res?.user)
-            await dispatch(setActioAlerts(alerts))
+            await login(res);
             navigate("/")
         }
 

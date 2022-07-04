@@ -1,4 +1,4 @@
-import Login from './components/Login'
+import Login, { useLogin } from './components/Login'
 import Register from './components/Register'
 import './App.css';
 import { Route, Routes } from "react-router-dom";
@@ -12,8 +12,22 @@ import { ControllerSetting } from './components/ControllerSettings';
 import { GroupsMenu } from './components/GroupMenu';
 import { SmartHome } from './components/SmartHome';
 import NavBar from './components/NavBar';
+import { useEffect } from 'react';
+import { fetchUserByToken } from './components/fetch';
+
 
 function App() {
+  const [login] = useLogin();
+  useEffect(()=>{
+    const loginByToken = async()=>{
+      const res = await fetchUserByToken();
+      if(!res||res.message)
+          return;
+      login(res)
+    }
+    loginByToken();
+  },[])
+
   return (
     <div className="App">
       <NavBar />

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ChanelImage } from './channelDescribe';
-import { Box, Button, Card, CardActions, CardContent, Grid, MenuItem, Select, TextField } from '@mui/material';
+import { Box, Button, Card, CardActions, CardContent, FormControl, FormLabel, Grid, MenuItem, Select, TextField } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
 import { setChannels, setPlc } from '../store/actions/user'
 import swal from 'sweetalert';
@@ -326,16 +326,34 @@ export const ControllerSetting = () => {
                                         <Grid spacing={3} id={index} item xs={12} sm={12}>
                                             <Card style={{ backgroundColor: 'lightgrey' }}>
                                                 <CardContent>
-                                                    ערוץ {index + 1}
+                                                <FormControl>
+                                                     <TextField
+                                                            
+                                                            label="מספר ערוץ"
+                                                            type="number"
+                                                            min="0"
+                                                            value={item}
+                                                            onChange={
+                                                            (e) => {
+                                                                let temp = [...arr];
+                                                                console.log(temp);
+                                                                temp[index] = e.target.value;
+                                                                setArr(temp);
+                                                            }
+                                                        }
+                                                    /> 
+                                                 </FormControl>
                                                 </CardContent>
                                                 <CardActions>
-                                                    <Select
+                                                    <FormControl fullWidth>
+                                                    <TextField
                                                         value={category[index]}
                                                         fullWidth
                                                         name="nameChannel"
-                                                        label='name channel'
+                                                        label='קטגוריה'
                                                         required
                                                         variant="outlined"
+                                                        select
                                                         onChange={(e) => {
                                                             let temp = [...category];
                                                             console.log(temp);
@@ -344,7 +362,8 @@ export const ControllerSetting = () => {
                                                         }}
                                                     >
                                                         {ChanelImage.map((v, i) => <MenuItem value={i} >{v.name}</MenuItem>)}
-                                                    </Select>
+                                                    </TextField>
+                                                    </FormControl>
                                                     <br></br>
                                                 </CardActions>
                                                 <Grid item xs={12} sm={12}>

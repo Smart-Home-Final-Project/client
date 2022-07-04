@@ -13,6 +13,22 @@ export const fetchActionAlert = async (user) => {
     return res;
 }
 
+export const fetchUserByToken = async (user) => {
+    let res;
+    let headers = new Headers();
+    headers.append("authorization",`Bearer ${localStorage.getItem("token")}`)
+    var requestOptions = {
+        method: 'GET',
+        redirect: 'follow',
+        headers
+    };
+    await fetch(`http://localhost:4500/user/token`, requestOptions)
+        .then(response => response.json())
+        .then(result => res = result)
+        .catch(error => console.log('error', error));
+    return res;
+}
+
 export const fetchPlc = async (user) => {
     let plc;
     let headers = new Headers();
