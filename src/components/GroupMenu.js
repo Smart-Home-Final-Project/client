@@ -9,7 +9,9 @@ import AppsIcon from '@mui/icons-material/Apps';
 
 
 export const GroupsMenu = () => {
-    let groups = useSelector(state => state.groups)
+    let groups = useSelector(state => state.groups);
+    const  plc = useSelector(state => state.plc)
+
     let dispatch = useDispatch();
 
     //fetchUpdate
@@ -17,6 +19,7 @@ export const GroupsMenu = () => {
         var groupUpdate
         var statusCheck = group.status == false ? true : false;
         group.status = statusCheck;
+        group.listChannels =  group.listChannels.map(channel=>({...channel,status:statusCheck}))
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
@@ -41,8 +44,28 @@ export const GroupsMenu = () => {
 
     //turn on group and update the status
 
+    const swichStatus = async (group,action="swichToOn") => {
+        var myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        const rows = group.listChannels.map(channel=>{
+                return {channel:channel.channelNum,login:plc.login,token:plc.token}
+        })
+        var raw = JSON.stringify(rows)
+
+        var requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body:raw,
+            redirect: 'follow'
+        };
+        let r;
+        await fetch(`http://localhost:4500/ChannelGroup/${action}/`, requestOptions)
+            .then(result => r = result)
+            .catch(error => console.log('error', error));
+        console.log("after turn on" + r)
+    }
     const handleOn = async (group, index) => {
-        // await fetchOn(group)
+        await swichStatus(group)
         await fetchUpdate(group, index)
         console.log(group)
     }
@@ -50,7 +73,7 @@ export const GroupsMenu = () => {
     //turn off group and update the status
 
     const handelOff = async (group, index) => {
-        // await fetchOff(group)
+        await swichStatus(group,"swichToOff")
         await fetchUpdate(group, index)
         console.log(group)
     }

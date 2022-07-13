@@ -13,7 +13,7 @@ import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
 import validate from "validate.js"
 import { FormHelperText } from '@mui/material';
-
+import _ from "lodash";
 
 const theme = createTheme();
 
@@ -32,7 +32,7 @@ export const ControllerSetting = () => {
     let channels = useSelector(state => state.channels)
     let dispatch = useDispatch()
     const [state, setState] = useState({ errors: {}, touched: {}, isValid: false });
-
+    const [channelsState,setChannelsState] = useState(channels?channels:[]);
 
     const [values, setValues] = useState(plc == null ? {
         plcName: '',
@@ -41,6 +41,23 @@ export const ControllerSetting = () => {
         numOfChannels: 0,
         userId: ''
     } : plc);
+
+    
+    useEffect(() => {
+
+        setChannelsState([...(channels?channels:[])])
+    },[channels])
+
+    useEffect(() => {
+        setValues(plc == null ? {
+            plcName: '',
+            token: '',
+            login: '',
+            numOfChannels: 0,
+            userId: ''
+        } : plc)
+    },[plc])
+
     const [arr, setArr] = useState([]);
     const [category, setCategory] = useState([]);
 
@@ -71,7 +88,7 @@ export const ControllerSetting = () => {
     const fetchAddPlc = async () => {
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
-        var raw = JSON.stringify({ ...values, userId: user._id });
+        var raw = JSON.stringify({ ...values, userId: user._id,numOfChannels:channelsState.length });
         var requestOptions = {
             method: 'POST',
             headers: myHeaders,
@@ -89,7 +106,7 @@ export const ControllerSetting = () => {
     const fetchUpdatePlc = async () => {
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
-        var raw = JSON.stringify(values);
+        var raw = JSON.stringify({...values,numOfChannels:channelsState.length});
         var requestOptions = {
             method: 'PUT',
             headers: myHeaders,
@@ -105,54 +122,41 @@ export const ControllerSetting = () => {
     }
     const fetchAddChannelList = async (arr, categories, plcId) => {
         let resChannels = [];
-        console.log("fetch");
-        for (let i = 0; i < arr.length; i++) {
-            var myHeaders = new Headers();
-            myHeaders.append("Content-Type", "application/json");
-            var raw = JSON.stringify({
-                "plcId": plcId,
-                "name": arr[i],
-                "category": categories[i],
-                "status": false,
-                "channelNum":( i+1)
-            });
-
-            var requestOptions = {
-                method: 'POST',
-                headers: myHeaders,
-                body: raw,
-                redirect: 'follow'
-            };
-            await fetch("http://localhost:4500/channel/", requestOptions)
-                .then(response => response.json())
-                .then(result => { resChannels.push(result); console.log(result) })
-                .catch(error => console.log('error', error));
+        const newsChannels = channelsState.filter(item=>!item._id)
+        for (let i = 0; i < newsChannels.length; i++) {
+            newsChannels[i] = {...newsChannels[i], "status": false, "plcId": plcId,channelNum:parseInt(newsChannels[i].channelNum)}
         }
+        var myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        var requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: JSON.stringify(newsChannels),
+            redirect: 'follow'
+        };
+
+        await fetch("http://localhost:4500/channel/", requestOptions)
+            .then(response => response.json())
+            .then(result => { resChannels.push(result); console.log(result) })
+            .catch(error => console.log('error', error));
         return resChannels;
     }
 
     const fetchUpdateChannelList = async (plcId) => {
         //todo update channels exists
         let resChannels = [];
-        let rows = [];
-        console.log("fetch");
-        for (let i = 0; i < plc.numOfChannels; i++) {
-            var raw = {
-                "plcId": plcId,
-                "name": arr[i],
-                "category": category[i],
-                "status": false,
-                "channelNum": i,
-                '_id': channels[i]._id,
-            };
-            rows.push(raw)
+        const updatedChannels = channelsState.filter(item=>item._id)
+
+        for (let i = 0; i < updatedChannels.length; i++) {
+            updatedChannels[i] = {...updatedChannels[i], "status": false, "plcId": plcId,channelNum:parseInt(updatedChannels[i].channelNum)}
         }
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
         var requestOptions = {
             method: 'PUT',
             headers: myHeaders,
-            body: JSON.stringify(rows),
+            body: JSON.stringify(updatedChannels),
             redirect: 'follow'
         };
         await fetch(`http://localhost:4500/channel/update`, requestOptions)
@@ -199,29 +203,19 @@ export const ControllerSetting = () => {
         if (state.isValid) {
             //addPLc
             let newPlc
-            console.log(values)
-            if (plc == null || plc == {})
+            if (plc === null || plc === {})
                 newPlc = await fetchAddPlc();
             else
                 newPlc = await fetchUpdatePlc();
-            if (plc == null) {
+            if (plc === null) {
                 const c = await fetchAddChannelList(arr, category, newPlc._id);
                 dispatch(setChannels([...channels, ...c]));
             }
             else {
                 const result = await fetchUpdateChannelList(newPlc._id);
-                const c = result.flat();
+                const addedCannels = await fetchAddChannelList(arr, category, newPlc._id);
+                const c = [...result.flat(),...addedCannels.flat()];
                 dispatch(setChannels([...channels.filter(chanel => !c.map(item => item._id).includes(chanel._id)), ...c]))
-                if (values.numOfChannels > plc.numOfChannels) {
-                    let temp = [...arr]
-                    temp.splice(0, plc.numOfChannels)
-                    setArr(temp)
-                    let temp1 = [...category]
-                    temp1.splice(0, plc.numOfChannels)
-                    setCategory(temp1)
-                    let added = await fetchAddChannelList(temp, temp1, newPlc._id)
-                    dispatch(setChannels([...channels, ...added]))
-                }
             }
             dispatch(setPlc(newPlc))
             swal({
@@ -242,6 +236,13 @@ export const ControllerSetting = () => {
         tempCategory.splice(i, 1)
         setCategory(tempCategory)
         setValues({ ...values, numOfChannels: values.numOfChannels - 1 })
+    }
+
+    const handaleChangeChanel = (e,index)=>{
+            const chanel = channelsState[index];
+            const updatedChannelsState = [...channelsState];
+            updatedChannelsState[index] = {...chanel,[e.target.name]: e.target.value}
+            setChannelsState([...updatedChannelsState])
     }
 
     return (
@@ -307,38 +308,34 @@ export const ControllerSetting = () => {
                                     {(state.touched?.["login"] || state.submitted) && (<FormHelperText error>{state.errors?.["login"]?.[0]}</FormHelperText>)}
                                 </Grid>
                                 <Grid item xs={12} sm={12}>
-                                    <TextField
+                                    {/* <TextField
                                         type="number"
                                         label="הכנס את מספר המכשירים"
                                         name="numOfChannels"
                                         onChange={(e) => {
-                                            handleArr(e)
-                                            handleCategory(e);
+                                            // handleArr(e)
+                                            // handleCategory(e);
                                             setValues({ ...values, numOfChannels: e.target.value == "" ? 0 : parseInt(e.target.value) })
                                         }}
                                         required
                                         value={values.numOfChannels}
                                         variant="outlined"
-                                    />
+                                    /> */}
+                                    <Button onClick={()=>{setChannelsState([...channelsState,{}])}}>הוסף מכשיר</Button>
                                 </Grid>
-                                {(values.numOfChannels) ? (
-                                    arr.map((item, index) =>
+                                {channelsState.map((item, index) =>
                                         <Grid spacing={3} id={index} item xs={12} sm={12}>
                                             <Card style={{ backgroundColor: 'lightgrey' }}>
                                                 <CardContent>
                                                 <FormControl>
                                                      <TextField
-                                                            
                                                             label="מספר ערוץ"
                                                             type="number"
                                                             min="0"
-                                                            value={item}
-                                                            onChange={
-                                                            (e) => {
-                                                                let temp = [...arr];
-                                                                console.log(temp);
-                                                                temp[index] = e.target.value;
-                                                                setArr(temp);
+                                                            name="channelNum"
+                                                            value={item.channelNum}
+                                                            onChange={(e) => {
+                                                                handaleChangeChanel(e,index)
                                                             }
                                                         }
                                                     /> 
@@ -347,21 +344,18 @@ export const ControllerSetting = () => {
                                                 <CardActions>
                                                     <FormControl fullWidth>
                                                     <TextField
-                                                        value={category[index]}
                                                         fullWidth
-                                                        name="nameChannel"
+                                                        name="category"
+                                                        value={item.category}
                                                         label='קטגוריה'
                                                         required
                                                         variant="outlined"
                                                         select
                                                         onChange={(e) => {
-                                                            let temp = [...category];
-                                                            console.log(temp);
-                                                            temp[index] = parseInt(e.target.value);
-                                                            setCategory(temp);
+                                                            handaleChangeChanel(e,index)
                                                         }}
                                                     >
-                                                        {ChanelImage.map((v, i) => <MenuItem value={i} >{v.name}</MenuItem>)}
+                                                        {ChanelImage.map((v) => <MenuItem value={v.key} >{v.name}</MenuItem>)}
                                                     </TextField>
                                                     </FormControl>
                                                     <br></br>
@@ -370,17 +364,12 @@ export const ControllerSetting = () => {
                                                     <TextField
                                                         fullWidth
                                                         label="שם המכשיר"
-                                                        name="nameChannelUse"
+                                                        name="name"
                                                         required
-                                                        value={item}
-                                                        onChange={
-                                                            (e) => {
-                                                                let temp = [...arr];
-                                                                console.log(temp);
-                                                                temp[index] = e.target.value;
-                                                                setArr(temp);
-                                                            }
-                                                        }
+                                                        value={item.name}
+                                                        onChange={(e) => {
+                                                            handaleChangeChanel(e,index)
+                                                        }}
                                                         variant="outlined"
                                                     >
                                                     </TextField>
@@ -389,7 +378,7 @@ export const ControllerSetting = () => {
                                                 <br></br>
                                             </Card>
                                         </Grid>
-                                    )) : <></>}
+                                    )}
 
 
                             </Grid>

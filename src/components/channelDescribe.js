@@ -2,22 +2,16 @@
 export const ChanelImage=[
   
 {
+    key:"lamp",
     name:"מנורה",
 },
 {
+    key:"airconditinor",
     name:"מזגן",
 },
 {
-    name:"תריסים",
-},
-{
+    "key":"alarmclock",
     name:"שעון מעורר",
-},
-{
-    name:"מערכת שמע",
-},
-{
-    name:"מפיץ ריח",
 },
 ];
 
