@@ -209,7 +209,7 @@ export const ControllerSetting = () => {
                 newPlc = await fetchUpdatePlc();
             if (plc === null) {
                 const c = await fetchAddChannelList(arr, category, newPlc._id);
-                dispatch(setChannels([...channels, ...c]));
+                dispatch(setChannels([...channelsState, ...c]));
             }
             else {
                 const result = await fetchUpdateChannelList(newPlc._id);
