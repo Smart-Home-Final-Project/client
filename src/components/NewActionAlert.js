@@ -110,7 +110,9 @@ export default function NewActionAlert(props) {
             else {
                 result = await fetchUpdateAlert(alertJson)
                 let tempArr = actionAlerts.filter(e => e._id != result._id);
+
                 tempArr = [...tempArr, result]
+                console.log(tempArr);
                 dispatch(setActioAlerts(tempArr))
                 swal({
                     text: `השעון עודכן בהצלחה`,

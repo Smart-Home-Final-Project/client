@@ -86,6 +86,7 @@ export const ControllerSetting = () => {
         }
     }, [])
     const fetchAddPlc = async () => {
+         
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
         var raw = JSON.stringify({ ...values, userId: user._id,numOfChannels:channelsState.length });
@@ -104,6 +105,7 @@ export const ControllerSetting = () => {
     }
 
     const fetchUpdatePlc = async () => {
+         
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
         var raw = JSON.stringify({...values,numOfChannels:channelsState.length});
@@ -203,7 +205,7 @@ export const ControllerSetting = () => {
         if (state.isValid) {
             //addPLc
             let newPlc
-            if (plc === null || plc === {})
+            if (plc === null || plc === {} || plc === undefined)
                 newPlc = await fetchAddPlc();
             else
                 newPlc = await fetchUpdatePlc();
